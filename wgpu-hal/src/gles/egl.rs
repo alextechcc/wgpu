@@ -114,7 +114,7 @@ unsafe extern "system" fn egl_debug_proc(
 #[derive(Debug)]
 enum DisplayRef {
     X11(ptr::NonNull<raw::c_void>),
-    Wayland,
+    Wayland(ptr::NonNull<raw::c_void>),
 }
 
 impl DisplayRef {
@@ -122,7 +122,7 @@ impl DisplayRef {
     fn as_ptr(&self) -> *mut raw::c_void {
         match *self {
             Self::X11(ptr) => ptr.as_ptr(),
-            Self::Wayland => unreachable!(),
+            Self::Wayland(ptr) => ptr.as_ptr(),
         }
     }
 }
@@ -135,6 +135,7 @@ impl DisplayRef {
 #[derive(Debug)]
 struct DisplayOwner {
     library: libloading::Library,
+    client_library: Option<libloading::Library>,
     display: DisplayRef,
 }
 
@@ -146,7 +147,14 @@ impl Drop for DisplayOwner {
                     self.library.get(b"XCloseDisplay\0").unwrap();
                 func(ptr.as_ptr());
             },
-            DisplayRef::Wayland => {}
+            DisplayRef::Wayland(ptr) => unsafe {
+                let wl_display_disconnect: libloading::Symbol<WlDisplayDisconnectFun> = self
+                    .client_library.as_ref()
+                    .expect("Missing client library")
+                    .get(b"wl_display_disconnect\0")
+                    .unwrap();
+                wl_display_disconnect(ptr.as_ptr());
+            },
         }
     }
 }
@@ -160,6 +168,7 @@ fn open_x_display() -> Option<DisplayOwner> {
         ptr::NonNull::new(result).map(|ptr| DisplayOwner {
             display: DisplayRef::X11(ptr),
             library,
+            client_library: None,
         })
     }
 }
@@ -174,24 +183,20 @@ unsafe fn find_library(paths: &[&str]) -> Option<libloading::Library> {
     None
 }
 
-fn test_wayland_display() -> Option<DisplayOwner> {
-    /* We try to connect and disconnect here to simply ensure there
-     * is an active wayland display available.
-     */
+fn open_wayland_display() -> Option<DisplayOwner> {
     log::debug!("Loading Wayland library to get the current display");
-    let library = unsafe {
-        let client_library = find_library(&["libwayland-client.so.0", "libwayland-client.so"])?;
-        let wl_display_connect: libloading::Symbol<WlDisplayConnectFun> =
-            client_library.get(b"wl_display_connect\0").unwrap();
-        let wl_display_disconnect: libloading::Symbol<WlDisplayDisconnectFun> =
-            client_library.get(b"wl_display_disconnect\0").unwrap();
-        let display = ptr::NonNull::new(wl_display_connect(ptr::null()))?;
-        wl_display_disconnect(display.as_ptr());
-        find_library(&["libwayland-egl.so.1", "libwayland-egl.so"])?
-    };
+
+    let client_library =
+        unsafe { find_library(&["libwayland-client.so.0", "libwayland-client.so"])? };
+    let wl_display_connect: libloading::Symbol<WlDisplayConnectFun> =
+        unsafe { client_library.get(b"wl_display_connect\0").unwrap() };
+    let display = unsafe { ptr::NonNull::new(wl_display_connect(ptr::null()))? };
+    let library = unsafe { find_library(&["libwayland-egl.so.1", "libwayland-egl.so"])? };
+
     Some(DisplayOwner {
         library,
-        display: DisplayRef::Wayland,
+        client_library: Some(client_library),
+        display: DisplayRef::Wayland(display),
     })
 }
 
@@ -816,7 +821,7 @@ impl crate::Instance for Instance {
         );
 
         let wayland_library = if client_ext_str.contains("EGL_EXT_platform_wayland") {
-            test_wayland_display()
+            open_wayland_display()
         } else {
             None
         };
@@ -838,18 +843,18 @@ impl crate::Instance for Instance {
         let egl1_5: Option<&Arc<EglInstance>> = Some(&egl);
 
         let (display, display_owner, wsi_kind) =
-            if let (Some(library), Some(egl)) = (wayland_library, egl1_5) {
+            if let (Some(display_owner), Some(egl)) = (wayland_library, egl1_5) {
                 log::info!("Using Wayland platform");
                 let display_attributes = [khronos_egl::ATTRIB_NONE];
                 let display = unsafe {
                     egl.get_platform_display(
                         EGL_PLATFORM_WAYLAND_KHR,
-                        khronos_egl::DEFAULT_DISPLAY,
+                        display_owner.display.as_ptr(),
                         &display_attributes,
                     )
                 }
                 .unwrap();
-                (display, Some(Rc::new(library)), WindowKind::Wayland)
+                (display, Some(Rc::new(display_owner)), WindowKind::Wayland)
             } else if let (Some(display_owner), Some(egl)) = (x11_display_library, egl1_5) {
                 log::info!("Using X11 platform");
                 let display_attributes = [khronos_egl::ATTRIB_NONE];
