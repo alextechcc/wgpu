@@ -703,7 +703,7 @@ impl Inner {
             version,
             supports_native_window,
             config,
-            wl_display: None,
+            wl_display: Some(display.as_ptr()),
             srgb_kind,
             force_gles_minor_version,
         })
