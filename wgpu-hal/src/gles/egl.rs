@@ -621,7 +621,7 @@ impl Inner {
             //Note: the core version can fail if robustness is not supported
             // (regardless of whether the extension is supported!).
             // In fact, Angle does precisely that awful behavior, so we don't try it there.
-            if version >= (1, 5) && !display_extensions.contains("EGL_ANGLE_") {
+            if false && version >= (1, 5) && !display_extensions.contains("EGL_ANGLE_") {
                 log::debug!("\tEGL context: +robust access");
                 context_attributes.push(khronos_egl::CONTEXT_OPENGL_ROBUST_ACCESS);
                 context_attributes.push(khronos_egl::TRUE as _);
