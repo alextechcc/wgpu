@@ -605,7 +605,7 @@ impl Inner {
                 wgt::Gles3MinorVersion::Version2 => 2,
             });
         }
-        if flags.contains(wgt::InstanceFlags::DEBUG) {
+        if false && flags.contains(wgt::InstanceFlags::DEBUG) {
             if version >= (1, 5) {
                 log::debug!("\tEGL context: +debug");
                 context_attributes.push(khronos_egl::CONTEXT_OPENGL_DEBUG);
@@ -625,7 +625,7 @@ impl Inner {
                 log::debug!("\tEGL context: +robust access");
                 context_attributes.push(khronos_egl::CONTEXT_OPENGL_ROBUST_ACCESS);
                 context_attributes.push(khronos_egl::TRUE as _);
-            } else if display_extensions.contains("EGL_EXT_create_context_robustness") {
+            } else if false && display_extensions.contains("EGL_EXT_create_context_robustness") {
                 log::debug!("\tEGL context: +robust access EXT");
                 context_attributes.push(EGL_CONTEXT_OPENGL_ROBUST_ACCESS_EXT);
                 context_attributes.push(khronos_egl::TRUE as _);
