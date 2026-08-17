@@ -668,6 +668,95 @@ impl Limits {
         }
     }
 
+    /// These default limits are the set used in compatibility mode.
+    ///
+    /// Those limits are as follows (different from default are marked with *):
+    /// ```rust
+    /// # use wgpu_types::Limits;
+    /// assert_eq!(Limits::compatibility_mode_defaults(), Limits {
+    ///     max_texture_dimension_1d: 4096, // *
+    ///     max_texture_dimension_2d: 4096, // *
+    ///     max_texture_dimension_3d: 2048,
+    ///     max_texture_array_layers: 256,
+    ///     max_bind_groups: 4,
+    ///     max_bind_groups_plus_vertex_buffers: 24,
+    ///     max_bindings_per_bind_group: 1000,
+    ///     max_dynamic_uniform_buffers_per_pipeline_layout: 8,
+    ///     max_dynamic_storage_buffers_per_pipeline_layout: 4,
+    ///     max_sampled_textures_per_shader_stage: 16,
+    ///     max_samplers_per_shader_stage: 16,
+    ///     max_storage_buffers_per_shader_stage: 8,
+    ///     // TODO: #8764 implements stage specific limits required for compat mode.
+    ///     // max_storage_buffers_in_vertex_stage: 0, // *
+    ///     // max_storage_buffers_in_fragment_stage: 4, // *
+    ///     // max_storage_textures_in_vertex_stage: 0, // *
+    ///     // max_storage_textures_in_fragment_stage: 4,
+    ///     max_storage_textures_per_shader_stage: 4,
+    ///     max_uniform_buffers_per_shader_stage: 12,
+    ///     max_binding_array_elements_per_shader_stage: 0,
+    ///     max_binding_array_acceleration_structure_elements_per_shader_stage: 0,
+    ///     max_binding_array_sampler_elements_per_shader_stage: 0,
+    ///     max_uniform_buffer_binding_size: 16 << 10, // * (16 KiB)
+    ///     max_storage_buffer_binding_size: 128 << 20, // (128 MiB)
+    ///     max_vertex_buffers: 8,
+    ///     max_buffer_size: 256 << 20, // (256 MiB)
+    ///     max_vertex_attributes: 16,
+    ///     max_vertex_buffer_array_stride: 2048,
+    ///     max_inter_stage_shader_variables: 15, // *
+    ///     min_uniform_buffer_offset_alignment: 256,
+    ///     min_storage_buffer_offset_alignment: 256,
+    ///     max_color_attachments: 4, // *
+    ///     max_color_attachment_bytes_per_sample: 32,
+    ///     max_compute_workgroup_storage_size: 16384,
+    ///     max_compute_invocations_per_workgroup: 128, // *
+    ///     max_compute_workgroup_size_x: 128, // *
+    ///     max_compute_workgroup_size_y: 128, // *
+    ///     max_compute_workgroup_size_z: 64,
+    ///     max_compute_workgroups_per_dimension: 65535,
+    ///     max_immediate_size: 0, // TODO: Perhaps this should be 64 (WebGPU immediates proposal).
+    ///     max_non_sampler_bindings: 1_000_000,
+    ///     max_task_workgroup_total_count: 0,
+    ///     max_task_workgroups_per_dimension: 0,
+    ///     max_mesh_workgroup_total_count: 0,
+    ///     max_mesh_workgroups_per_dimension: 0,
+    ///     max_task_invocations_per_workgroup: 0,
+    ///     max_task_invocations_per_dimension: 0,
+    ///     max_mesh_invocations_per_workgroup: 0,
+    ///     max_mesh_invocations_per_dimension: 0,
+    ///     max_task_payload_size: 0,
+    ///     max_mesh_output_vertices: 0,
+    ///     max_mesh_output_primitives: 0,
+    ///     max_mesh_output_layers: 0,
+    ///     max_mesh_multiview_view_count: 0,
+    ///     max_blas_primitive_count: 0,
+    ///     max_blas_geometry_count: 0,
+    ///     max_tlas_instance_count: 0,
+    ///     max_acceleration_structures_per_shader_stage: 0,
+    ///     max_buffers_and_acceleration_structures_per_shader_stage: 28, // sum of storage buffers, uniform buffers and vertex buffers limits
+    ///     max_multiview_view_count: 0,
+    ///     max_ray_dispatch_count: 0,
+    ///     max_ray_recursion_depth: 0,
+    /// });
+    /// ```
+    #[must_use]
+    pub const fn compatibility_mode_defaults() -> Self {
+        Self {
+         max_texture_dimension_1d: 4096,
+         max_texture_dimension_2d: 4096,
+         // TODO: #8764 implements stage specific limits required for compat mode.
+         // max_storage_buffers_in_vertex_stage: 0,
+         // max_storage_buffers_in_fragment_stage: 4,
+         // max_storage_textures_in_vertex_stage: 0,
+         max_uniform_buffer_binding_size: 16 << 10,
+         max_inter_stage_shader_variables: 15,
+         max_color_attachments: 4,
+         max_compute_invocations_per_workgroup: 128,
+         max_compute_workgroup_size_x: 128,
+         max_compute_workgroup_size_y: 128,
+            ..Self::defaults()
+        }
+    }
+
     /// Sets each limit to `i32::MAX` (or 1, in the case of lower-is-better limits).
     ///
     /// These values do not reflect the capabilities of any actual device. They are

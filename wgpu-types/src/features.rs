@@ -88,6 +88,9 @@ mod webgpu_impl {
 
     #[doc(hidden)]
     pub const WEBGPU_FEATURE_PRIMITIVE_INDEX: u64 = 1 << 17;
+
+    #[doc(hidden)]
+    pub const WEBGPU_FEATURE_CORE_FEATURES_AND_LIMITS: u64 = 1 << 18;
 }
 
 macro_rules! bitflags_array_impl {
@@ -1827,6 +1830,16 @@ bitflags_array! {
         /// remain compatible with previous wgpu behavior.
         #[name("primitive-index", "shader-primitive-index")]
         const PRIMITIVE_INDEX = WEBGPU_FEATURE_PRIMITIVE_INDEX;
+
+        /// Enables the full WebGPU core capability set.
+        ///
+        /// This feature is enabled by default.
+        ///
+        /// Supported platforms:
+        /// - TODO
+        /// This is a web and native feature.
+        #[name("core-features-and-limits")]
+        const CORE_FEATURES_AND_LIMITS = WEBGPU_FEATURE_CORE_FEATURES_AND_LIMITS;
     }
 }
 

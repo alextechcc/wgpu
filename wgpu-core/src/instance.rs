@@ -1041,11 +1041,20 @@ impl Drop for Surface {
 pub struct Adapter {
     pub(crate) raw: hal::DynExposedAdapter,
     pub(crate) instance: Arc<Instance>,
+    pub(crate) default_feature_level: wgt::FeatureLevel,
 }
 
 impl Adapter {
-    pub(crate) fn new(raw: hal::DynExposedAdapter, instance: Arc<Instance>) -> Arc<Self> {
-        Arc::new(Self { raw, instance })
+    pub(crate) fn new(
+        raw: hal::DynExposedAdapter,
+        instance: Arc<Instance>,
+        default_feature_level: wgt::FeatureLevel,
+    ) -> Arc<Self> {
+        Arc::new(Self {
+            raw,
+            instance,
+            default_feature_level,
+        })
     }
 
     /// Returns the backend this adapter is using.

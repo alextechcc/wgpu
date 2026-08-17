@@ -15,8 +15,6 @@ use crate::{Features, TextureUsages};
 ///
 /// Corresponds to the defined values of [WebGPU feature level string](
 /// https://gpuweb.github.io/gpuweb/#feature-level-string).
-///
-/// `wgpu` does not support compatibility-level adapters per se.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, ConstDefault!)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
@@ -28,6 +26,34 @@ pub enum FeatureLevel {
     Compatibility,
 }
 
+impl FeatureLevel {
+    /// Get the default features for this feature level.
+    pub const fn default_features(self) -> crate::Features {
+        match self {
+            Self::Core => crate::Features::CORE_FEATURES_AND_LIMITS,
+            Self::Compatibility => crate::Features::empty(),
+        }
+    }
+
+    /// Get the default limits for this feature level.
+    pub const fn default_limits(self) -> crate::Limits {
+        match self {
+            Self::Core => crate::Limits::defaults(),
+            Self::Compatibility => crate::Limits::compatibility_mode_defaults(),
+        }
+    }
+
+    /// Get a feature level from the environment variable `WGPU_FEATURE_LEVEL`.
+    pub fn from_env() -> Option<Self> {
+        let env = crate::env::var("WGPU_FEATURE_LEVEL")?;
+        match env.to_lowercase().as_str() {
+            "core" => Some(Self::Core),
+            "compatibility" => Some(Self::Compatibility),
+            _ => None,
+        }
+    }
+}
+
 /// Options for requesting adapter.
 ///
 /// Corresponds to [WebGPU `GPURequestAdapterOptions`](
@@ -37,6 +63,8 @@ pub enum FeatureLevel {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct RequestAdapterOptions<S> {
+    /// Requests different capability sets (e.g. compatibility mode).
+    pub feature_level: FeatureLevel,
     /// Power preference for the adapter.
     pub power_preference: PowerPreference,
     /// Indicates that only a fallback adapter can be returned. This is generally a "software"
@@ -61,6 +89,7 @@ pub struct RequestAdapterOptions<S> {
 impl<S> Default for RequestAdapterOptions<S> {
     fn default() -> Self {
         Self {
+            feature_level: FeatureLevel::Core,
             power_preference: PowerPreference::default(),
             force_fallback_adapter: false,
             compatible_surface: None,
